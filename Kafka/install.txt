@@ -1,0 +1,89 @@
+sudo apt update
+sudo apt install default-jdk
+
+wget <https://kafka.apache.org/downloads ไปหาในนี้>
+
+tar xzf kafka_2.13-2.4.0.tgz
+mv kafka_2.13-2.4.0 /usr/local/kafka
+
+#conf file = server.properties
+- advertised.listeners=PLAINTEXT://[server-ip-address]:9092
+- zookeeper.connect=localhost:2181 
+
+--> vim /etc/systemd/system/zookeeper.service
+[Unit]
+Description=Apache Zookeeper server
+Documentation=http://zookeeper.apache.org
+Requires=network.target remote-fs.target
+After=network.target remote-fs.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/kafka/bin/zookeeper-server-start.sh /usr/local/kafka/config/zookeeper.properties
+ExecStop=/usr/local/kafka/bin/zookeeper-server-stop.sh
+Restart=on-abnormal
+
+[Install]
+WantedBy=multi-user.target
+
+--> vim /etc/systemd/system/kafka.service
+[Unit]
+Description=Apache Kafka Server
+Documentation=http://kafka.apache.org/documentation.html
+Requires=zookeeper.service
+
+[Service]
+Type=simple
+Environment="JAVA_HOME=/usr/lib/jvm/java-1.11.0-openjdk-amd64"
+ExecStart=/usr/local/kafka/bin/kafka-server-start.sh /usr/local/kafka/config/server.properties
+ExecStop=/usr/local/kafka/bin/kafka-server-stop.sh
+
+[Install]
+WantedBy=multi-user.target
+
+# ต้องเปิดและปิดตามลำดับ
+เปิด zookeeper -> kafka
+ปิด  kafka -> zookeeper 
+เปิดแบบ ที่ 1
+sudo systemctl daemon-reload
+sudo systemctl start zookeeper
+sudo systemctl start kafka
+sudo systemctl enable --now zookeeper
+sudo systemctl enable --now kafka
+sudo systemctl status kafka zookeeper
+เปิดแบบที่ 2
+ตามรูป
+ไปที่ folder kafka
+Start zookeeper using : 
+bin/zookeeper-server-start.sh config/zookeeper.properties
+
+JMX_PORT=8004 bin/kafka-server-start.sh config/server.properties 
+
+
+ซึ่งจะติดตั้ง manager kafka สร้าง topic โน้นนี้ง่ายมาก
+https://computingforgeeks.com/configure-apache-kafka-on-ubuntu/
+
+cd ~
+git clone https://github.com/yahoo/CMAK.git
+
+$ vim ~/CMAK/conf/application.conf
+cmak.zkhosts="localhost:2181
+
+cd ~/CMAK/
+./sbt clean dist     // รอจักหน่อย
+
+ cd ~/CMAK/target/universal
+ unzip cmak-3.0.0.5.zip
+ cd cmak-3.0.0.5
+
+ cd ~/CMAK/target/universal/cmak-3.0.0.5
+ bin/cmak
+sudo ufw allow 9000 // เผื่อ port ไม่อนุญาต 
+
+
+
+error
+Under /tmp directory following directories have been removed:
+kafka-log directory
+Zookeeper-log directory
+Then, I've restarted kafka service.
